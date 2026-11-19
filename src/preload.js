@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('api', {
   renameCat2: (cat1, oldName, newName) => ipcRenderer.invoke('categories:rename-cat2', cat1, oldName, newName),
   deleteCat1: (name) => ipcRenderer.invoke('categories:delete-cat1', name),
   deleteCat2: (cat1, name) => ipcRenderer.invoke('categories:delete-cat2', cat1, name),
-  restoreDefaults: () => ipcRenderer.invoke('categories:restore-defaults')
+  restoreDefaults: () => ipcRenderer.invoke('categories:restore-defaults'),
+  // 应用设置（如游戏最高分，存账本文件）
+  getSetting: (key) => ipcRenderer.invoke('settings:get', key),
+  setSetting: (key, value) => ipcRenderer.invoke('settings:set', key, value)
 });

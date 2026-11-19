@@ -48,6 +48,13 @@ function initDb() {
   `);
   const n = db.prepare('SELECT COUNT(*) AS c FROM categories').get().c;
   if (n === 0) seedDefaultCategories();
+  // 应用设置表（如游戏最高分）：与账本同文件，备份 data.db 即全备份
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
 }
 
 function seedDefaultCategories() {
@@ -228,6 +235,19 @@ ipcMain.handle('expenses:export-csv', async () => {
 // 打开数据文件夹（方便用户备份）
 ipcMain.handle('app:open-data-folder', () => {
   shell.openPath(dataDir);
+  return { ok: true };
+});
+
+// —— 应用设置通道（键值对，如游戏最高分）——
+ipcMain.handle('settings:get', (e, key) => {
+  const r = db.prepare('SELECT value FROM app_settings WHERE key=?').get(String(key));
+  return r ? r.value : null;
+});
+
+ipcMain.handle('settings:set', (e, key, value) => {
+  db.prepare(
+    'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value'
+  ).run(String(key), String(value));
   return { ok: true };
 });
 

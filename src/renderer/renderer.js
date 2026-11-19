@@ -538,13 +538,22 @@ let gameBest = 0;
 let gameWon = false; // 是否已达成 2048（提示一次后继续玩）
 let gameOverFlag = false;
 
-function gameInit() {
+async function gameInit() {
   gameBoard = new Array(16).fill(0);
   gameScore = 0;
   gameWon = false;
   gameOverFlag = false;
-  gameBest = Number(localStorage.getItem('game2048-best') || 0);
-  $('game-best').textContent = gameBest;
+  // 最高分存账本文件（备份 data.db 即全备份）；旧版存在浏览器设置里的一次性搬过来
+  let best = Number((await window.api.getSetting('game2048-best')) || 0);
+  const old = Number(localStorage.getItem('game2048-best') || 0);
+  if (old > best) {
+    best = old;
+    window.api.setSetting('game2048-best', String(best));
+  }
+  localStorage.removeItem('game2048-best');
+  if (!Number.isFinite(best)) best = 0;
+  gameBest = best;
+  $('game-best').textContent = String(gameBest);
   $('game-over').classList.add('hidden');
   gameSpawn();
   gameSpawn();
@@ -574,7 +583,7 @@ function gameRender() {
   $('game-score').textContent = String(gameScore);
   if (gameScore > gameBest) {
     gameBest = gameScore;
-    localStorage.setItem('game2048-best', String(gameBest));
+    window.api.setSetting('game2048-best', String(gameBest));
     $('game-best').textContent = String(gameBest);
   }
 }
@@ -616,8 +625,9 @@ function gameCanMove() {
   return false;
 }
 
+// 返回是否真的动了（动不了返回 false，此时方向键让给页面滚动）
 function gameMove(dir) {
-  if (gameOverFlag) return;
+  if (gameOverFlag) return false;
   const lines = [];
   for (let k = 0; k < 4; k++) {
     const line = [];
@@ -627,7 +637,7 @@ function gameMove(dir) {
     }
     lines.push(gameSlide(line));
   }
-  if (!lines.some((l) => l.changed)) return; // 动不了就不算一步
+  if (!lines.some((l) => l.changed)) return false; // 动不了就不算一步
   for (let k = 0; k < 4; k++) {
     for (let t = 0; t < 4; t++) {
       const [r, c] = gameCellAt(k, t, dir);
@@ -645,6 +655,7 @@ function gameMove(dir) {
     gameOverFlag = true;
     $('game-over').classList.remove('hidden');
   }
+  return true;
 }
 
 // ===== 数据读写 =====
@@ -757,12 +768,21 @@ function bindEvents() {
     }
   });
 
-  // 2048 小游戏
+  // 2048 小游戏（点完按钮立即失焦，防止之后按空格/回车误触发）
   document.querySelectorAll('.game-btn').forEach((b) => {
-    b.addEventListener('click', () => gameMove(b.dataset.dir));
+    b.addEventListener('click', () => {
+      gameMove(b.dataset.dir);
+      b.blur();
+    });
   });
-  $('btn-game-new').addEventListener('click', gameInit);
-  $('btn-game-restart').addEventListener('click', gameInit);
+  $('btn-game-new').addEventListener('click', () => {
+    gameInit();
+    $('btn-game-new').blur();
+  });
+  $('btn-game-restart').addEventListener('click', () => {
+    gameInit();
+    $('btn-game-restart').blur();
+  });
   document.addEventListener('keydown', (e) => {
     // 只在游戏页响应方向键，避免干扰其他页面的输入框
     if ($('view-game').classList.contains('hidden')) return;
@@ -778,8 +798,8 @@ function bindEvents() {
     };
     const dir = map[e.code];
     if (!dir) return;
-    e.preventDefault();
-    gameMove(dir);
+    // 棋盘真动了才拦下方向键；动不了就让给页面滚动
+    if (gameMove(dir)) e.preventDefault();
   });
 }
 
@@ -800,6 +820,6 @@ function bindEvents() {
   $('stats-month').value = todayStr().slice(0, 7);
   fillFilterCat();
   bindEvents();
-  gameInit();
+  await gameInit();
   loadData();
 })();
