@@ -1,15 +1,16 @@
 const path = require('path');
 const fs = require('fs');
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { DatabaseSync } = require('node:sqlite');
 
 let db;
+let dataDir;
 
 // 初始化数据库：数据文件放在「我的文档\我要记账数据\data.db」
 function initDb() {
-  const dir = path.join(app.getPath('documents'), '我要记账数据');
-  fs.mkdirSync(dir, { recursive: true });
-  db = new DatabaseSync(path.join(dir, 'data.db'));
+  dataDir = path.join(app.getPath('documents'), '我要记账数据');
+  fs.mkdirSync(dataDir, { recursive: true });
+  db = new DatabaseSync(path.join(dataDir, 'data.db'));
   db.exec(`
     CREATE TABLE IF NOT EXISTS expenses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,6 +62,43 @@ ipcMain.handle('expenses:update', (e, exp) => {
 
 ipcMain.handle('expenses:delete', (e, id) => {
   db.prepare('DELETE FROM expenses WHERE id=?').run(id);
+  return { ok: true };
+});
+
+// 导出全部账单为 CSV（Excel 可直接打开；带 BOM 保证中文不乱码）
+function csvEscape(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+ipcMain.handle('expenses:export-csv', async () => {
+  const rows = db
+    .prepare('SELECT date, cat1, cat2, amount_cents, pay_method, note FROM expenses ORDER BY date DESC, id DESC')
+    .all();
+  const t = new Date();
+  const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: '导出账单',
+    defaultPath: path.join(app.getPath('documents'), `我要记账-账单导出-${today}.csv`),
+    filters: [{ name: 'CSV 表格', extensions: ['csv'] }]
+  });
+  if (canceled || !filePath) return { canceled: true };
+
+  const lines = [['日期', '一级分类', '二级分类', '金额(元)', '支付方式', '备注'].join(',')];
+  for (const r of rows) {
+    lines.push(
+      [r.date, r.cat1, r.cat2, (r.amount_cents / 100).toFixed(2), r.pay_method, r.note]
+        .map(csvEscape)
+        .join(',')
+    );
+  }
+  fs.writeFileSync(filePath, '﻿' + lines.join('\r\n'), 'utf-8');
+  return { ok: true, path: filePath };
+});
+
+// 打开数据文件夹（方便用户备份）
+ipcMain.handle('app:open-data-folder', () => {
+  shell.openPath(dataDir);
   return { ok: true };
 });
 

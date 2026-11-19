@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   addExpense: (exp) => ipcRenderer.invoke('expenses:add', exp),
   listExpenses: () => ipcRenderer.invoke('expenses:list'),
   updateExpense: (exp) => ipcRenderer.invoke('expenses:update', exp),
-  deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id)
+  deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id),
+  exportCsv: () => ipcRenderer.invoke('expenses:export-csv'),
+  openDataFolder: () => ipcRenderer.invoke('app:open-data-folder')
 });

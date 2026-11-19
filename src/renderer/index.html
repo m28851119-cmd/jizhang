@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
   <title>我要记账</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -15,7 +15,7 @@
   <nav class="tabs">
     <button class="tab active" data-tab="add">记一笔</button>
     <button class="tab" data-tab="list">账单</button>
-    <button class="tab" disabled>统计（开发中）</button>
+    <button class="tab" data-tab="stats">统计</button>
   </nav>
 
   <main>
@@ -59,8 +59,61 @@
 
     <!-- 账单列表 -->
     <section id="view-list" class="view hidden">
+      <div class="list-toolbar">
+        <select id="filter-month" title="按月份筛选"></select>
+        <select id="filter-cat" title="按分类筛选"></select>
+        <input type="text" id="filter-search" placeholder="搜索备注或分类…">
+        <span class="toolbar-spacer"></span>
+        <button class="tool-btn" id="btn-export">导出 CSV</button>
+        <button class="tool-btn" id="btn-open-folder">打开数据文件夹</button>
+      </div>
       <div class="summary-bar" id="summary-bar"></div>
       <div id="list" class="list"></div>
+    </section>
+
+    <!-- 统计 -->
+    <section id="view-stats" class="view hidden">
+      <div class="stats-head">
+        <div class="stats-title">月度统计</div>
+        <div class="stats-month">
+          <button class="month-nav" id="month-prev" title="上个月">‹</button>
+          <input type="month" id="stats-month">
+          <button class="month-nav" id="month-next" title="下个月">›</button>
+        </div>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">本月总支出</div>
+          <div class="stat-value" id="stat-total">¥0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">日均支出</div>
+          <div class="stat-value" id="stat-daily">¥0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">记账笔数</div>
+          <div class="stat-value" id="stat-count">0</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="viz-card">
+          <div class="viz-title">分类占比</div>
+          <div class="donut-wrap">
+            <svg id="donut" viewBox="0 0 200 200" width="190" height="190"></svg>
+            <div class="donut-center">
+              <div id="donut-center-val">¥0.00</div>
+              <div class="donut-center-label">本月</div>
+            </div>
+          </div>
+          <div class="legend" id="donut-legend"></div>
+        </div>
+        <div class="viz-card">
+          <div class="viz-title">分类排行</div>
+          <div class="rank-list" id="rank-list"></div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -79,6 +132,7 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
+  <div id="tip" class="tip hidden"></div>
   <script src="renderer.js"></script>
 </body>
 </html>
