@@ -17,6 +17,7 @@
     <button class="tab" data-tab="list">账单</button>
     <button class="tab" data-tab="stats">统计</button>
     <button class="tab" data-tab="cats">分类管理</button>
+    <button class="tab" data-tab="game">2048</button>
   </nav>
 
   <main>
@@ -126,6 +127,46 @@
         <button class="tool-btn primary" id="btn-add-cat1">+ 添加一级分类</button>
       </div>
       <div id="cat-list" class="cat-list"></div>
+    </section>
+
+    <!-- 2048 小游戏 -->
+    <section id="view-game" class="view hidden">
+      <div class="game-wrap">
+        <div class="game-head">
+          <div>
+            <div class="game-title">2048 小游戏</div>
+            <div class="game-hint">方向键（或 WASD）移动格子，相同数字相撞合并</div>
+          </div>
+          <div class="game-scores">
+            <div class="game-score-box">
+              <div class="game-score-label">得分</div>
+              <div class="game-score-val" id="game-score">0</div>
+            </div>
+            <div class="game-score-box">
+              <div class="game-score-label">最高分</div>
+              <div class="game-score-val" id="game-best">0</div>
+            </div>
+          </div>
+          <button class="tool-btn" id="btn-game-new">新游戏</button>
+        </div>
+        <div class="game-board-wrap">
+          <div class="game-board" id="game-board"></div>
+          <div id="game-over" class="game-over hidden">
+            <div class="game-over-title">游戏结束</div>
+            <button class="tool-btn primary" id="btn-game-restart">再来一局</button>
+          </div>
+        </div>
+        <div class="game-controls">
+          <span class="game-ctrl-spacer"></span>
+          <button class="game-btn" data-dir="up" title="上">↑</button>
+          <span class="game-ctrl-spacer"></span>
+        </div>
+        <div class="game-controls">
+          <button class="game-btn" data-dir="left" title="左">←</button>
+          <button class="game-btn" data-dir="down" title="下">↓</button>
+          <button class="game-btn" data-dir="right" title="右">→</button>
+        </div>
+      </div>
     </section>
   </main>
 

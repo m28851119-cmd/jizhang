@@ -166,7 +166,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
     t.classList.toggle('active', t.dataset.tab === name);
   });
-  for (const k of ['add', 'list', 'stats', 'cats']) {
+  for (const k of ['add', 'list', 'stats', 'cats', 'game']) {
     $('view-' + k).classList.toggle('hidden', k !== name);
   }
   // 离开「记一笔」页就取消编辑状态：防止用户改着改着切去别处，
@@ -531,6 +531,122 @@ async function refreshCategories() {
   renderStats();
 }
 
+// ===== 2048 小游戏 =====
+let gameBoard = []; // 16 个格子，0 = 空
+let gameScore = 0;
+let gameBest = 0;
+let gameWon = false; // 是否已达成 2048（提示一次后继续玩）
+let gameOverFlag = false;
+
+function gameInit() {
+  gameBoard = new Array(16).fill(0);
+  gameScore = 0;
+  gameWon = false;
+  gameOverFlag = false;
+  gameBest = Number(localStorage.getItem('game2048-best') || 0);
+  $('game-best').textContent = gameBest;
+  $('game-over').classList.add('hidden');
+  gameSpawn();
+  gameSpawn();
+  gameRender();
+}
+
+// 随机挑一个空格放 2（90%）或 4（10%）
+function gameSpawn() {
+  const empty = [];
+  gameBoard.forEach((v, i) => {
+    if (v === 0) empty.push(i);
+  });
+  if (empty.length === 0) return;
+  gameBoard[empty[Math.floor(Math.random() * empty.length)]] = Math.random() < 0.9 ? 2 : 4;
+}
+
+function gameRender() {
+  const el = $('game-board');
+  el.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
+    const cell = document.createElement('div');
+    const v = gameBoard[i];
+    cell.className = 'game-cell' + (v > 0 ? (v <= 2048 ? ' t' + v : ' t-super') : '');
+    cell.textContent = v > 0 ? String(v) : '';
+    el.appendChild(cell);
+  }
+  $('game-score').textContent = String(gameScore);
+  if (gameScore > gameBest) {
+    gameBest = gameScore;
+    localStorage.setItem('game2048-best', String(gameBest));
+    $('game-best').textContent = String(gameBest);
+  }
+}
+
+// 方向 → 取格坐标：把棋盘按方向拆成 4 条线（k = 第几条，t = 线上第几个）
+function gameCellAt(k, t, dir) {
+  if (dir === 'left') return [k, t];
+  if (dir === 'right') return [k, 3 - t];
+  if (dir === 'up') return [t, k];
+  return [3 - t, k]; // down
+}
+
+// 一条线向起点靠拢 + 相邻相同合并一次
+function gameSlide(line) {
+  const nums = line.filter((v) => v > 0);
+  const out = [];
+  let gained = 0;
+  for (let i = 0; i < nums.length; i++) {
+    if (i + 1 < nums.length && nums[i] === nums[i + 1]) {
+      out.push(nums[i] * 2);
+      gained += nums[i] * 2;
+      i++;
+    } else {
+      out.push(nums[i]);
+    }
+  }
+  while (out.length < 4) out.push(0);
+  return { arr: out, gained, changed: line.join(',') !== out.join(',') };
+}
+
+function gameCanMove() {
+  for (let i = 0; i < 16; i++) if (gameBoard[i] === 0) return true;
+  for (let r = 0; r < 4; r++)
+    for (let c = 0; c < 3; c++)
+      if (gameBoard[r * 4 + c] === gameBoard[r * 4 + c + 1]) return true;
+  for (let r = 0; r < 3; r++)
+    for (let c = 0; c < 4; c++)
+      if (gameBoard[r * 4 + c] === gameBoard[(r + 1) * 4 + c]) return true;
+  return false;
+}
+
+function gameMove(dir) {
+  if (gameOverFlag) return;
+  const lines = [];
+  for (let k = 0; k < 4; k++) {
+    const line = [];
+    for (let t = 0; t < 4; t++) {
+      const [r, c] = gameCellAt(k, t, dir);
+      line.push(gameBoard[r * 4 + c]);
+    }
+    lines.push(gameSlide(line));
+  }
+  if (!lines.some((l) => l.changed)) return; // 动不了就不算一步
+  for (let k = 0; k < 4; k++) {
+    for (let t = 0; t < 4; t++) {
+      const [r, c] = gameCellAt(k, t, dir);
+      gameBoard[r * 4 + c] = lines[k].arr[t];
+    }
+  }
+  gameScore += lines.reduce((s, l) => s + l.gained, 0);
+  gameSpawn();
+  gameRender();
+  if (!gameWon && Math.max(...gameBoard) >= 2048) {
+    gameWon = true;
+    showToast('恭喜达成 2048！可以继续挑战更高分');
+  }
+  if (!gameCanMove()) {
+    gameOverFlag = true;
+    $('game-over').classList.remove('hidden');
+  }
+}
+
 // ===== 数据读写 =====
 async function loadData() {
   allExpenses = await window.api.listExpenses();
@@ -640,6 +756,31 @@ function bindEvents() {
       showToast((res && res.msg) || '操作失败');
     }
   });
+
+  // 2048 小游戏
+  document.querySelectorAll('.game-btn').forEach((b) => {
+    b.addEventListener('click', () => gameMove(b.dataset.dir));
+  });
+  $('btn-game-new').addEventListener('click', gameInit);
+  $('btn-game-restart').addEventListener('click', gameInit);
+  document.addEventListener('keydown', (e) => {
+    // 只在游戏页响应方向键，避免干扰其他页面的输入框
+    if ($('view-game').classList.contains('hidden')) return;
+    const map = {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      KeyW: 'up',
+      KeyS: 'down',
+      KeyA: 'left',
+      KeyD: 'right'
+    };
+    const dir = map[e.code];
+    if (!dir) return;
+    e.preventDefault();
+    gameMove(dir);
+  });
 }
 
 // ===== 启动 =====
@@ -659,5 +800,6 @@ function bindEvents() {
   $('stats-month').value = todayStr().slice(0, 7);
   fillFilterCat();
   bindEvents();
+  gameInit();
   loadData();
 })();
