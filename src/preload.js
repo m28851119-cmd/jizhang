@@ -7,5 +7,14 @@ contextBridge.exposeInMainWorld('api', {
   updateExpense: (exp) => ipcRenderer.invoke('expenses:update', exp),
   deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id),
   exportCsv: () => ipcRenderer.invoke('expenses:export-csv'),
-  openDataFolder: () => ipcRenderer.invoke('app:open-data-folder')
+  openDataFolder: () => ipcRenderer.invoke('app:open-data-folder'),
+  // 分类管理（v1.1）
+  getCategories: () => ipcRenderer.invoke('categories:list'),
+  addCat1: (name) => ipcRenderer.invoke('categories:add-cat1', name),
+  addCat2: (cat1, name) => ipcRenderer.invoke('categories:add-cat2', cat1, name),
+  renameCat1: (oldName, newName) => ipcRenderer.invoke('categories:rename-cat1', oldName, newName),
+  renameCat2: (cat1, oldName, newName) => ipcRenderer.invoke('categories:rename-cat2', cat1, oldName, newName),
+  deleteCat1: (name) => ipcRenderer.invoke('categories:delete-cat1', name),
+  deleteCat2: (cat1, name) => ipcRenderer.invoke('categories:delete-cat2', cat1, name),
+  restoreDefaults: () => ipcRenderer.invoke('categories:restore-defaults')
 });

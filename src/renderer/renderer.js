@@ -1,17 +1,7 @@
-// ===== 分类体系（与 CLAUDE.md 第 5 节一致）=====
-const CATEGORIES = {
-  '餐饮饮食': ['早餐', '午餐', '晚餐', '夜宵', '买菜做饭', '零食水果', '咖啡奶茶', '外卖', '其他'],
-  '交通出行': ['公交地铁', '打车', '火车高铁', '飞机', '加油充电', '停车费', '共享单车', '其他'],
-  '购物消费': ['服饰鞋包', '数码家电', '日用百货', '美妆个护', '烟酒', '宠物相关', '母婴用品', '其他'],
-  '居住日常': ['房租房贷', '水电燃气', '物业费', '家具家居', '维修保养', '家政保洁', '其他'],
-  '通讯网络': ['手机话费', '宽带网络', '影音会员', '软件订阅', '其他'],
-  '娱乐休闲': ['电影演出', '游戏充值', '运动健身', '旅游度假', 'KTV酒吧', '其他'],
-  '医疗健康': ['看病买药', '体检', '牙科', '保健品', '其他'],
-  '教育学习': ['学费培训', '考试报名', '教材书籍', '文具用品', '其他'],
-  '人情往来': ['请客送礼', '红包礼金', '孝敬长辈', '慈善捐款', '其他'],
-  '金融保险': ['保险', '银行手续费', '利息还款', '其他'],
-  '其他支出': ['无法归类的支出']
-};
+// ===== 分类体系 =====
+// v1.1 起分类由用户管理：出厂清单在 main.js（首次建库写入 data.db），
+// 实际清单通过 window.api.getCategories() 从数据库加载；这里只保留固定配色。
+let categories = {};
 
 // ===== 分类固定配色 =====
 // 8 个彩色给最常见的 8 个大类（顺序经过色盲安全校验）；灰色给 3 个低频大类。
@@ -80,11 +70,20 @@ let pendingDeleteId = null;
 function fillCat1(selected) {
   const sel = $('cat1');
   sel.innerHTML = '';
-  for (const name of Object.keys(CATEGORIES)) {
+  for (const name of Object.keys(categories)) {
     const o = document.createElement('option');
     o.value = name;
     o.textContent = name;
     if (name === selected) o.selected = true;
+    sel.appendChild(o);
+  }
+  // 正在修改的旧账单，其分类可能已被用户删除：临时补一个「已删除」选项，
+  // 保证账单文字不被悄悄改动（保存时仍是原文字）
+  if (selected && !categories[selected]) {
+    const o = document.createElement('option');
+    o.value = selected;
+    o.textContent = selected + '（已删除）';
+    o.selected = true;
     sel.appendChild(o);
   }
 }
@@ -92,12 +91,19 @@ function fillCat1(selected) {
 function fillCat2(cat1, selected) {
   const sel = $('cat2');
   sel.innerHTML = '';
-  const subs = CATEGORIES[cat1] || [];
+  const subs = categories[cat1] || [];
   for (const s of subs) {
     const o = document.createElement('option');
     o.value = s;
     o.textContent = s;
     if (s === selected) o.selected = true;
+    sel.appendChild(o);
+  }
+  if (selected && !subs.includes(selected)) {
+    const o = document.createElement('option');
+    o.value = selected;
+    o.textContent = selected + '（已删除）';
+    o.selected = true;
     sel.appendChild(o);
   }
 }
@@ -160,10 +166,14 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
     t.classList.toggle('active', t.dataset.tab === name);
   });
-  for (const k of ['add', 'list', 'stats']) {
+  for (const k of ['add', 'list', 'stats', 'cats']) {
     $('view-' + k).classList.toggle('hidden', k !== name);
   }
+  // 离开「记一笔」页就取消编辑状态：防止用户改着改着切去别处，
+  // 回来输入新金额点保存时误把旧账单覆盖掉
+  if (name !== 'add' && editingId != null) resetForm();
   if (name === 'stats') renderStats();
+  if (name === 'cats') renderCatManager();
 }
 
 // ===== 账单列表 + 筛选 =====
@@ -188,7 +198,7 @@ function filteredExpenses() {
 function fillFilterCat() {
   $('filter-cat').innerHTML =
     '<option value="">全部分类</option>' +
-    Object.keys(CATEGORIES).map((c) => `<option value="${c}">${c}</option>`).join('');
+    Object.keys(categories).map((c) => `<option value="${c}">${c}</option>`).join('');
 }
 
 function refreshMonthOptions() {
@@ -400,6 +410,127 @@ function renderRank(sorted, total) {
   });
 }
 
+// ===== 分类管理（v1.1 自定义分类）=====
+let pendingCatDel = null; // {type:'cat1', cat1} | {type:'cat2', cat1, cat2}
+let catInputState = null; // {mode:'add1'} | {mode:'add2', cat1} | {mode:'rename1', cat1} | {mode:'rename2', cat1, cat2}
+
+function renderCatManager() {
+  const el = $('cat-list');
+  el.innerHTML = '';
+  const names = Object.keys(categories);
+  if (names.length === 0) {
+    el.innerHTML = '<div class="empty">还没有分类，点右上角「添加一级分类」</div>';
+    return;
+  }
+  for (const cat1 of names) {
+    const subs = categories[cat1] || [];
+    const n1 = allExpenses.filter((e) => e.cat1 === cat1).length;
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.innerHTML = `
+      <div class="cat-card-head">
+        <span class="cat-dot" style="background:${catColor(cat1)}"></span>
+        <span class="cat-name">${esc(cat1)}</span>
+        <span class="cat-bill-hint">${n1 > 0 ? n1 + ' 笔账单' : ''}</span>
+        <span class="cat-head-spacer"></span>
+        <button class="mini-btn" data-act="rename1">改名</button>
+        <button class="mini-btn danger" data-act="del1">删除</button>
+      </div>
+      <div class="cat-subs">
+        ${subs
+          .map(
+            (s) =>
+              `<span class="cat-chip">${esc(s)}<button class="chip-x" data-act="del2" data-sub="${esc(s)}" title="删除小类">×</button></span>`
+          )
+          .join('')}
+        <span class="cat-chip cat-chip-add" data-act="add2">+ 添加小类</span>
+      </div>`;
+    card.querySelector('[data-act="rename1"]').addEventListener('click', () => openCatInput('rename1', cat1));
+    card.querySelector('[data-act="del1"]').addEventListener('click', () => confirmDelCat1(cat1));
+    card.querySelector('[data-act="add2"]').addEventListener('click', () => openCatInput('add2', cat1));
+    card.querySelectorAll('[data-act="del2"]').forEach((btn) => {
+      btn.addEventListener('click', () => confirmDelCat2(cat1, btn.dataset.sub));
+    });
+    el.appendChild(card);
+  }
+}
+
+function billCount2(cat1, cat2) {
+  return allExpenses.filter((e) => e.cat1 === cat1 && e.cat2 === cat2).length;
+}
+
+function openCatInput(mode, cat1, cat2) {
+  catInputState = { mode, cat1, cat2 };
+  const t = $('cat-modal-title');
+  const text = $('cat-modal-text');
+  const input = $('cat-modal-input');
+  if (mode === 'add1') {
+    t.textContent = '添加一级分类';
+    text.textContent = '新分类会自动带一个小类「其他」，随后可再添加更多小类。';
+    input.value = '';
+  } else if (mode === 'add2') {
+    t.textContent = `给「${cat1}」添加小类`;
+    text.textContent = '';
+    input.value = '';
+  } else if (mode === 'rename1') {
+    t.textContent = `修改「${cat1}」的名称`;
+    const n = allExpenses.filter((e) => e.cat1 === cat1).length;
+    text.textContent = n > 0 ? `改名后，已有 ${n} 笔账单会一起改成新名字。` : '该分类下还没有账单。';
+    input.value = cat1;
+  } else if (mode === 'rename2') {
+    t.textContent = `修改「${cat2}」的名称`;
+    const n = billCount2(cat1, cat2);
+    text.textContent = n > 0 ? `改名后，已有 ${n} 笔账单会一起改成新名字。` : '该小类下还没有账单。';
+    input.value = cat2;
+  }
+  $('modal-cat').classList.remove('hidden');
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 0);
+}
+
+function confirmDelCat1(cat1) {
+  pendingCatDel = { type: 'cat1', cat1 };
+  const n = allExpenses.filter((e) => e.cat1 === cat1).length;
+  $('modal-text').textContent =
+    n > 0
+      ? `删除「${cat1}」后，已有 ${n} 笔账单会保留原分类文字，照常显示和统计，只是以后记账不能再选它。确定删除？`
+      : `该分类下没有账单。确定删除「${cat1}」？`;
+  $('modal-ok').textContent = '删除';
+  $('modal').classList.remove('hidden');
+}
+
+function confirmDelCat2(cat1, cat2) {
+  pendingCatDel = { type: 'cat2', cat1, cat2 };
+  const n = billCount2(cat1, cat2);
+  $('modal-text').textContent =
+    n > 0
+      ? `删除「${cat2}」后，已有 ${n} 笔账单会保留原分类文字，照常显示和统计，只是以后记账不能再选它。确定删除？`
+      : `该小类下没有账单。确定删除「${cat2}」？`;
+  $('modal-ok').textContent = '删除';
+  $('modal').classList.remove('hidden');
+}
+
+// 分类变动后：重载分类清单与账单（改名会同步改账单文字）、
+// 保住下拉框当前选择、刷新相关页面
+async function refreshCategories() {
+  categories = await window.api.getCategories();
+  allExpenses = await window.api.listExpenses();
+  const names = Object.keys(categories);
+  const cur1 = $('cat1').value;
+  const keep1 = names.includes(cur1) ? cur1 : names[0];
+  fillCat1(keep1);
+  const subs = categories[keep1] || [];
+  const keep2 = subs.includes($('cat2').value) ? $('cat2').value : subs[0];
+  fillCat2(keep1, keep2);
+  fillFilterCat();
+  refreshMonthOptions();
+  renderList();
+  renderCatManager();
+  renderStats();
+}
+
 // ===== 数据读写 =====
 async function loadData() {
   allExpenses = await window.api.listExpenses();
@@ -412,7 +543,7 @@ async function loadData() {
 function bindEvents() {
   // 记一笔
   $('cat1').addEventListener('change', () => {
-    fillCat2($('cat1').value, CATEGORIES[$('cat1').value][0]);
+    fillCat2($('cat1').value, (categories[$('cat1').value] || [])[0]);
   });
   $('save').addEventListener('click', handleSave);
   $('cancel-edit').addEventListener('click', resetForm);
@@ -445,9 +576,24 @@ function bindEvents() {
   $('month-next').addEventListener('click', () => shiftStatsMonth(1));
   $('stats-month').addEventListener('change', renderStats);
 
-  // 删除确认弹窗
-  $('modal-cancel').addEventListener('click', () => $('modal').classList.add('hidden'));
+  // 删除确认弹窗（账单删除 / 分类删除共用）
+  $('modal-cancel').addEventListener('click', () => {
+    pendingCatDel = null;
+    $('modal').classList.add('hidden');
+  });
   $('modal-ok').addEventListener('click', async () => {
+    if (pendingCatDel) {
+      const d = pendingCatDel;
+      pendingCatDel = null;
+      $('modal').classList.add('hidden');
+      const res =
+        d.type === 'cat1'
+          ? await window.api.deleteCat1(d.cat1)
+          : await window.api.deleteCat2(d.cat1, d.cat2);
+      showToast(res && res.ok ? '已删除分类' : (res && res.msg) || '删除失败');
+      await refreshCategories();
+      return;
+    }
     if (pendingDeleteId == null) return;
     await window.api.deleteExpense(pendingDeleteId);
     pendingDeleteId = null;
@@ -455,15 +601,60 @@ function bindEvents() {
     showToast('已删除');
     await loadData();
   });
+
+  // 分类管理页
+  $('btn-add-cat1').addEventListener('click', () => openCatInput('add1'));
+  $('btn-restore-defaults').addEventListener('click', async () => {
+    const res = await window.api.restoreDefaults();
+    showToast(res && res.added > 0 ? `已补回 ${res.added} 个默认分类` : '默认分类都在，无需恢复');
+    await refreshCategories();
+  });
+
+  // 分类输入弹窗（添加/改名）
+  $('cat-modal-cancel').addEventListener('click', () => {
+    catInputState = null;
+    $('modal-cat').classList.add('hidden');
+  });
+  $('cat-modal-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('cat-modal-ok').click();
+  });
+  $('cat-modal-ok').addEventListener('click', async () => {
+    const s = catInputState;
+    if (!s) return;
+    const val = $('cat-modal-input').value.trim();
+    if (!val) {
+      showToast('请输入名称');
+      return;
+    }
+    let res;
+    if (s.mode === 'add1') res = await window.api.addCat1(val);
+    else if (s.mode === 'add2') res = await window.api.addCat2(s.cat1, val);
+    else if (s.mode === 'rename1') res = await window.api.renameCat1(s.cat1, val);
+    else res = await window.api.renameCat2(s.cat1, s.cat2, val);
+    if (res && res.ok) {
+      $('modal-cat').classList.add('hidden');
+      catInputState = null;
+      showToast(s.mode === 'rename1' || s.mode === 'rename2' ? '已改名' : '已添加');
+      await refreshCategories();
+    } else {
+      showToast((res && res.msg) || '操作失败');
+    }
+  });
 }
 
 // ===== 启动 =====
-(function init() {
+(async function init() {
+  categories = await window.api.getCategories();
+  const names = Object.keys(categories);
   const lastCat1 = localStorage.getItem('lastCat1');
-  const validCat1 = lastCat1 && CATEGORIES[lastCat1] ? lastCat1 : '餐饮饮食';
+  const validCat1 = lastCat1 && categories[lastCat1] ? lastCat1 : names[0];
   const lastCat2 = localStorage.getItem('lastCat2');
+  const validCat2 =
+    validCat1 && lastCat2 && (categories[validCat1] || []).includes(lastCat2)
+      ? lastCat2
+      : (categories[validCat1] || [])[0];
   fillCat1(validCat1);
-  fillCat2(validCat1, lastCat2 && CATEGORIES[validCat1].includes(lastCat2) ? lastCat2 : CATEGORIES[validCat1][0]);
+  fillCat2(validCat1, validCat2);
   $('date').value = todayStr();
   $('stats-month').value = todayStr().slice(0, 7);
   fillFilterCat();

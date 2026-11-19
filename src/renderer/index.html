@@ -16,6 +16,7 @@
     <button class="tab active" data-tab="add">记一笔</button>
     <button class="tab" data-tab="list">账单</button>
     <button class="tab" data-tab="stats">统计</button>
+    <button class="tab" data-tab="cats">分类管理</button>
   </nav>
 
   <main>
@@ -115,6 +116,17 @@
         </div>
       </div>
     </section>
+
+    <!-- 分类管理 -->
+    <section id="view-cats" class="view hidden">
+      <div class="list-toolbar">
+        <span class="cat-manager-hint">分类清单存在账本文件里，备份 data.db 即一起备份</span>
+        <span class="toolbar-spacer"></span>
+        <button class="tool-btn" id="btn-restore-defaults">恢复默认分类</button>
+        <button class="tool-btn primary" id="btn-add-cat1">+ 添加一级分类</button>
+      </div>
+      <div id="cat-list" class="cat-list"></div>
+    </section>
   </main>
 
   <footer class="footer">数据文件：我的文档 · 我要记账数据 · data.db（可复制备份）</footer>
@@ -127,6 +139,19 @@
       <div class="modal-actions">
         <button id="modal-cancel" class="modal-btn">取消</button>
         <button id="modal-ok" class="modal-btn danger">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分类输入弹窗（添加/改名） -->
+  <div id="modal-cat" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title" id="cat-modal-title"></div>
+      <div class="modal-text" id="cat-modal-text"></div>
+      <input type="text" id="cat-modal-input" maxlength="12" placeholder="分类名称（12 字以内）">
+      <div class="modal-actions">
+        <button id="cat-modal-cancel" class="modal-btn">取消</button>
+        <button id="cat-modal-ok" class="modal-btn primary">确定</button>
       </div>
     </div>
   </div>
