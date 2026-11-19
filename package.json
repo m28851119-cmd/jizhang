@@ -1,0 +1,15 @@
+{
+  "name": "wo-yao-jizhang",
+  "productName": "我要记账",
+  "version": "0.1.0",
+  "description": "个人/家庭本地记账应用（Windows + macOS）",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "用户",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^40.10.2"
+  }
+}

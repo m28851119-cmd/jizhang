@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <title>我要记账</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">我要记账</div>
+    <div class="slogan">数据只保存在本机 · 离线可用</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active">记一笔</button>
+    <button class="tab" disabled>账单（开发中）</button>
+    <button class="tab" disabled>统计（开发中）</button>
+  </nav>
+
+  <main>
+    <section class="card form-card">
+      <div class="amount-row">
+        <span class="currency">¥</span>
+        <input type="number" id="amount" placeholder="0.00" min="0" step="0.01" autofocus>
+      </div>
+      <div class="row">
+        <label for="cat1">一级分类</label>
+        <select id="cat1"></select>
+      </div>
+      <div class="row">
+        <label for="cat2">二级分类</label>
+        <select id="cat2"></select>
+      </div>
+      <div class="row">
+        <label for="date">日期</label>
+        <input type="date" id="date">
+      </div>
+      <div class="row">
+        <label for="pay">支付方式</label>
+        <select id="pay">
+          <option>微信</option>
+          <option>支付宝</option>
+          <option>现金</option>
+          <option>银行卡</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="note">备注</label>
+        <input type="text" id="note" placeholder="选填，如：和同事聚餐" maxlength="100">
+      </div>
+      <button id="save" class="save-btn">保存这笔账</button>
+    </section>
+  </main>
+
+  <footer class="footer">v0.1.0 骨架版本 · 保存功能下一阶段接入</footer>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>

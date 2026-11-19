@@ -1,0 +1,186 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: #f6f7f9;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 顶栏 */
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+.slogan {
+  font-size: 13px;
+  color: #999;
+}
+
+/* 页签 */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px 0;
+}
+
+.tab {
+  padding: 8px 20px;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  background: #e9eaee;
+  color: #777;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #fff;
+  color: #e8590c;
+  font-weight: 600;
+}
+
+.tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 主体卡片 */
+main {
+  flex: 1;
+  padding: 0 24px 24px;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  max-width: 560px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 金额输入 */
+.amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed #eee;
+  margin-bottom: 20px;
+}
+
+.currency {
+  font-size: 32px;
+  font-weight: 700;
+  color: #e8590c;
+}
+
+#amount {
+  font-size: 40px;
+  font-weight: 700;
+  border: none;
+  outline: none;
+  width: 100%;
+  color: #333;
+}
+
+#amount::placeholder {
+  color: #ccc;
+}
+
+/* 表单行 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.row label {
+  width: 72px;
+  font-size: 14px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.row select,
+.row input[type="date"],
+.row input[type="text"] {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  outline: none;
+}
+
+.row select:focus,
+.row input:focus {
+  border-color: #e8590c;
+}
+
+/* 保存按钮 */
+.save-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  background: #e8590c;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.save-btn:hover {
+  background: #d94f0a;
+}
+
+.save-btn:active {
+  background: #c2470a;
+}
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  padding: 12px;
+  font-size: 12px;
+  color: #bbb;
+}
+
+/* 提示条 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none;
+}
