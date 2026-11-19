@@ -13,6 +13,10 @@ body {
   min-height: 100vh;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* 顶栏 */
 .topbar {
   display: flex;
@@ -62,17 +66,17 @@ body {
   opacity: 0.7;
 }
 
-/* 主体卡片 */
+/* 主体 */
 main {
   flex: 1;
   padding: 0 24px 24px;
 }
 
-.form-card {
+.view {
   background: #fff;
   border-radius: 12px;
   padding: 24px 28px;
-  max-width: 560px;
+  max-width: 720px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -138,7 +142,7 @@ main {
   border-color: #e8590c;
 }
 
-/* 保存按钮 */
+/* 按钮 */
 .save-btn {
   width: 100%;
   margin-top: 8px;
@@ -156,8 +160,119 @@ main {
   background: #d94f0a;
 }
 
-.save-btn:active {
-  background: #c2470a;
+.cancel-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 15px;
+  color: #888;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #f6f7f9;
+}
+
+/* 账单列表 */
+.summary-bar {
+  font-size: 15px;
+  color: #666;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
+}
+
+.summary-bar strong {
+  color: #e8590c;
+  font-size: 17px;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+}
+
+.day-sum {
+  font-weight: 400;
+  color: #aaa;
+}
+
+.expense-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: 8px;
+}
+
+.expense-row:hover {
+  background: #faf8f6;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-cat {
+  font-size: 15px;
+  color: #333;
+}
+
+.row-meta {
+  font-size: 13px;
+  color: #999;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-right {
+  text-align: right;
+  margin-left: 12px;
+}
+
+.row-amount {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+}
+
+.row-actions {
+  margin-top: 4px;
+}
+
+.mini-btn {
+  font-size: 13px;
+  color: #e8590c;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.mini-btn:hover {
+  text-decoration: underline;
+}
+
+.mini-btn.danger-text {
+  color: #d33;
+}
+
+.empty {
+  text-align: center;
+  color: #bbb;
+  padding: 60px 0;
+  font-size: 15px;
 }
 
 /* 页脚 */
@@ -179,8 +294,59 @@ main {
   padding: 10px 22px;
   border-radius: 20px;
   font-size: 14px;
+  z-index: 30;
 }
 
-.hidden {
-  display: none;
+/* 确认弹窗 */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px 26px;
+  width: 340px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.modal-text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-btn {
+  padding: 8px 18px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+}
+
+.modal-btn.danger {
+  background: #d33;
+  border-color: #d33;
+  color: #fff;
 }

@@ -13,48 +13,70 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active">记一笔</button>
-    <button class="tab" disabled>账单（开发中）</button>
+    <button class="tab active" data-tab="add">记一笔</button>
+    <button class="tab" data-tab="list">账单</button>
     <button class="tab" disabled>统计（开发中）</button>
   </nav>
 
   <main>
-    <section class="card form-card">
-      <div class="amount-row">
-        <span class="currency">¥</span>
-        <input type="number" id="amount" placeholder="0.00" min="0" step="0.01" autofocus>
+    <!-- 记一笔 -->
+    <section id="view-add" class="view">
+      <div class="card form-card">
+        <div class="amount-row">
+          <span class="currency">¥</span>
+          <input type="number" id="amount" placeholder="0.00" min="0" step="0.01" autofocus>
+        </div>
+        <div class="row">
+          <label for="cat1">一级分类</label>
+          <select id="cat1"></select>
+        </div>
+        <div class="row">
+          <label for="cat2">二级分类</label>
+          <select id="cat2"></select>
+        </div>
+        <div class="row">
+          <label for="date">日期</label>
+          <input type="date" id="date">
+        </div>
+        <div class="row">
+          <label for="pay">支付方式</label>
+          <select id="pay">
+            <option>微信</option>
+            <option>支付宝</option>
+            <option>现金</option>
+            <option>银行卡</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="note">备注</label>
+          <input type="text" id="note" placeholder="选填，如：和同事聚餐" maxlength="100">
+        </div>
+        <button id="save" class="save-btn">保存这笔账</button>
+        <button id="cancel-edit" class="cancel-btn hidden">取消修改</button>
       </div>
-      <div class="row">
-        <label for="cat1">一级分类</label>
-        <select id="cat1"></select>
-      </div>
-      <div class="row">
-        <label for="cat2">二级分类</label>
-        <select id="cat2"></select>
-      </div>
-      <div class="row">
-        <label for="date">日期</label>
-        <input type="date" id="date">
-      </div>
-      <div class="row">
-        <label for="pay">支付方式</label>
-        <select id="pay">
-          <option>微信</option>
-          <option>支付宝</option>
-          <option>现金</option>
-          <option>银行卡</option>
-          <option>其他</option>
-        </select>
-      </div>
-      <div class="row">
-        <label for="note">备注</label>
-        <input type="text" id="note" placeholder="选填，如：和同事聚餐" maxlength="100">
-      </div>
-      <button id="save" class="save-btn">保存这笔账</button>
+    </section>
+
+    <!-- 账单列表 -->
+    <section id="view-list" class="view hidden">
+      <div class="summary-bar" id="summary-bar"></div>
+      <div id="list" class="list"></div>
     </section>
   </main>
 
-  <footer class="footer">v0.1.0 骨架版本 · 保存功能下一阶段接入</footer>
+  <footer class="footer">数据文件：我的文档 · 我要记账数据 · data.db（可复制备份）</footer>
+
+  <!-- 删除确认弹窗 -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">确认删除</div>
+      <div class="modal-text" id="modal-text"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="modal-btn">取消</button>
+        <button id="modal-ok" class="modal-btn danger">删除</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast hidden"></div>
   <script src="renderer.js"></script>

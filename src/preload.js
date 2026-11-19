@@ -1,4 +1,9 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
-// 预留通道：后续「数据存取」功能在这里向界面暴露安全的接口
-contextBridge.exposeInMainWorld('app', {});
+// 向界面暴露安全的记账接口（界面代码无法直接碰数据库）
+contextBridge.exposeInMainWorld('api', {
+  addExpense: (exp) => ipcRenderer.invoke('expenses:add', exp),
+  listExpenses: () => ipcRenderer.invoke('expenses:list'),
+  updateExpense: (exp) => ipcRenderer.invoke('expenses:update', exp),
+  deleteExpense: (id) => ipcRenderer.invoke('expenses:delete', id)
+});
